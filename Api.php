@@ -190,16 +190,29 @@ if ($_POST['METHOD'] == 'GETMESAS') {
 if ($_POST['METHOD'] == 'GETORDERS') {
 
     $conexion = conectar();
-    $sql = "SELECT Orden from mesas;";
+    $sql = "SELECT Id,Orden,Fecha FROM mesas;";
     $resultado = mysqli_query($conexion, $sql);
     $arreglo = array();
     $i = 0;
     while ($row = mysqli_fetch_assoc($resultado)) {
-        $arreglo[$i] = $row;
-        $i++;
+        $ordrs = preg_split('/-/', $row["Orden"]);
+        if ($row["Orden"] != 0 && $row["Orden"] != null) {
+            print_r($row["Id"]);
+            foreach ($ordrs as $itemId) {
+                $sql = "SELECT Nombre FROM productos WHERE Id=$itemId;";
+                $resultado2 = mysqli_query($conexion, $sql);
+                $item = mysqli_fetch_assoc($resultado2);
+                if ($item != null) {
+                    $arreglo[$i][0] = $row["Id"];
+                    $arreglo[$i][1] = $row["Fecha"];
+                    $arreglo[$i][2] = $item["Nombre"];
+                    $i++;
+                }
+            }
+        }
     }
     desconectar($conexion);
-    echo json_encode($arreglo);
+    // echo json_encode($arreglo);
     exit();
 }
 
