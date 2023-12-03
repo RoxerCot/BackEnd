@@ -244,6 +244,37 @@ if ($_POST['METHOD'] == 'GETORDERS') {
     exit();
 }
 
+if ($_POST['METHOD'] == 'GETNOTES') {
+
+    $conexion = conectar();
+    $sql = "SELECT Id,Notas FROM mesas;";
+    $resultado = mysqli_query($conexion, $sql);
+    $arreglo = array();
+    $i = 0;
+    while ($row = mysqli_fetch_assoc($resultado)) {
+        $notas = preg_split('/-/', $row["Notas"]);
+        if ($row["Notas"] != 0 && $row["Notas"] != null) {
+
+            $newnote = "";
+            foreach ($notas as $nota) {
+                $itm = explode("/", $nota)[1];
+                $not = explode("/", $nota)[0];
+                $sql = "SELECT Nombre FROM productos WHERE Id= $itm;";
+                $res = mysqli_query($conexion, $sql);
+                $fila = mysqli_fetch_assoc($res);
+                // print_r($newnote);
+                $newnote = $newnote . $fila['Nombre'] . "</br>" . $not . "</br>";
+            }
+            $arreglo[$i][0] = $row["Id"];
+            $arreglo[$i][1] = $newnote;
+            $i++;
+        }
+    }
+    desconectar($conexion);
+    echo json_encode($arreglo);
+    exit();
+}
+
 if ($_POST['METHOD'] == 'EDITITEM') {
 
     $conexion = conectar();
@@ -298,11 +329,11 @@ if ($_POST['METHOD'] == 'ADDORDER') {
 
     $conexion = conectar();
     date_default_timezone_set('America/Mexico_City');
-    print_r(date_default_timezone_get());
     $date = date('Y/m/d h:i:s', time());
     $itemId = $_POST['itemId'];
     $mesaId = $_POST['mesaId'];
-    $sql = "SELECT Orden FROM mesas WHERE Id = $mesaId";
+    $nota = $_POST['nota'];
+    $sql = "SELECT Orden,Notas FROM mesas WHERE Id = $mesaId";
     $resultado = mysqli_query($conexion, $sql);
     $row = mysqli_fetch_assoc($resultado);
     if ($row["Orden"] == 0 || $row["Orden"] == null) {
@@ -310,7 +341,12 @@ if ($_POST['METHOD'] == 'ADDORDER') {
     } else {
         $newOrdr = $row["Orden"] . '-' . $itemId;
     }
-    $sql = "UPDATE mesas SET Orden='$newOrdr', Fecha='$date' WHERE Id=$mesaId;";
+    if ($row["Notas"] == 0 || $row["Notas"] == null) {
+        $newNote = str_replace('-', '', $nota) . "/" . $itemId;
+    } else {
+        $newNote = $row["Notas"] . '-' . str_replace('-', '', $nota) . "/" . $itemId;
+    }
+    $sql = "UPDATE mesas SET Orden='$newOrdr', Fecha='$date', Notas='$newNote' WHERE Id=$mesaId;";
     mysqli_query($conexion, $sql);
     desconectar($conexion);
     echo json_encode(['Mensaje' => "Producto Añadido"]);
