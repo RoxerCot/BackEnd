@@ -155,6 +155,34 @@ if ($_POST['METHOD'] == 'DELETECLIENTE') {
     desconectar($conexion);
 }
 
+if ($_POST['METHOD'] == 'DELORDEN') {
+    $id = $_POST['mesaId'];
+    $conexion = conectar();
+    $sql = "UPDATE mesas SET Orden='0' WHERE Id = $id;";
+    mysqli_query($conexion, $sql);
+    echo json_encode(['Mensaje' => "Orden Borrado"]);
+    desconectar($conexion);
+}
+
+
+if ($_POST['METHOD'] == 'DELEITEMORDER') {
+    $id = $_POST['Id'];
+    $mesaId = $_POST['mesaId'];
+    $conexion = conectar();
+    $sql = "SELECT Orden FROM mesas WHERE Id='$mesaId';";
+    $resultado = mysqli_query($conexion, $sql);
+    $row = mysqli_fetch_assoc($resultado);
+    $ordrs = preg_split('/-/', $row["Orden"]);
+    $index = array_search($id, $ordrs);
+    unset($ordrs[$index]);
+    $ordrs = array_values($ordrs);
+    $updatedIdItems = implode('-', $ordrs);
+    $sql = "UPDATE mesas SET Orden = '$updatedIdItems' WHERE Id = $mesaId;";
+    mysqli_query($conexion, $sql);
+    echo json_encode(['Mensaje' => "Orden Borrado"]);
+    desconectar($conexion);
+}
+
 if ($_POST['METHOD'] == 'GETCATEGORIAS') {
 
     $conexion = conectar();
@@ -197,22 +225,22 @@ if ($_POST['METHOD'] == 'GETORDERS') {
     while ($row = mysqli_fetch_assoc($resultado)) {
         $ordrs = preg_split('/-/', $row["Orden"]);
         if ($row["Orden"] != 0 && $row["Orden"] != null) {
-            print_r($row["Id"]);
             foreach ($ordrs as $itemId) {
-                $sql = "SELECT Nombre FROM productos WHERE Id=$itemId;";
+                $sql = "SELECT Nombre,Id FROM productos WHERE Id=$itemId;";
                 $resultado2 = mysqli_query($conexion, $sql);
                 $item = mysqli_fetch_assoc($resultado2);
                 if ($item != null) {
                     $arreglo[$i][0] = $row["Id"];
                     $arreglo[$i][1] = $row["Fecha"];
                     $arreglo[$i][2] = $item["Nombre"];
+                    $arreglo[$i][3] = $item["Id"];
                     $i++;
                 }
             }
         }
     }
     desconectar($conexion);
-    // echo json_encode($arreglo);
+    echo json_encode($arreglo);
     exit();
 }
 
